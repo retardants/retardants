@@ -1,31 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="retardants" default="dist">
 
-    <!-- set global properties for this build -->
+    <!-- Global directories for the build -->
     <property name="src" location="src"/>
     <property name="build" location="build"/>
     <property name="dist"  location="dist"/>
+    <property name="util"  location="util"/>
+
     <property name="botname"  location="MyBot.jar"/>
-    <property name="manifest" location="util/Manifest.txt" />
+    <property name="manifest" location="${util}/Manifest.txt" />
+    <property name="runcmd" location="${util}/rungame.sh" />
 
-    <target name="init" description="Build initialization">
-        <mkdir dir="${build}" />
 
-        <!-- Perform any build initialization in this target -->
-    </target>
 
-    <target name="clean"  description="cleanup all">
+    <target name="clean"  description="Cleanup All">
         <delete dir="${build}"/>
         <delete dir="${dist}"/>
     </target>
+
+
+
+    <target name="init" description="Build initialization">
+        <mkdir dir="${build}" />
+        <mkdir dir="${dist}" />
+    </target>
+
+
 
     <target name="build" depends="init" description="build all modules">
         <javac srcdir="${src}" destdir="${build}"/>
     </target>
 
     <target name="dist" depends="build" description="generate the distribution" >
-        <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-        <jar jarfile="${dist}/MyBot.jar" basedir="${build}" manifest="/util/Manifest.txt"/>
+        <jar jarfile="${dist}/MyBot.jar" basedir="${build}" manifest="${manifest}"/>
+        <exec executable="${runcmd}" />
     </target>
 
 </project>
