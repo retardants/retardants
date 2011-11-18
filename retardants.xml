@@ -5,6 +5,8 @@
     <property name="src" location="src"/>
     <property name="build" location="build"/>
     <property name="dist"  location="dist"/>
+    <property name="botname"  location="MyBot.jar"/>
+    <property name="manifest" location="util/Manifest.txt" />
 
     <target name="init" description="Build initialization">
         <mkdir dir="${build}" />
@@ -14,17 +16,16 @@
 
     <target name="clean"  description="cleanup all">
         <delete dir="${build}"/>
+        <delete dir="${dist}"/>
     </target>
 
-    <target name="build.modules" depends="init, clean" description="build all modules">
+    <target name="build" depends="init" description="build all modules">
         <javac srcdir="${src}" destdir="${build}"/>
     </target>
 
-    <target name="dist" depends="build.modules" description="generate the distribution" >
-        <!-- Create the distribution directory -->
-        <mkdir dir="${dist}/lib"/>
+    <target name="dist" depends="build" description="generate the distribution" >
         <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-        <jar jarfile="${dist}/lib/MyBot.jar" basedir="${build}"/>
-      </target>
+        <jar jarfile="${dist}/MyBot.jar" basedir="${build}" manifest="/util/Manifest.txt"/>
+    </target>
 
 </project>
