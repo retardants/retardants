@@ -7,7 +7,7 @@
     <property name="dist"  location="dist"/>
     <property name="util"  location="util"/>
 
-    <property name="botname"  location="MyBot.jar"/>
+    <property name="botdest" location="${dist}/MyBot" />
     <property name="manifest" location="${util}/Manifest.txt" />
     <property name="runcmd" location="${util}/rungame.sh" />
 
@@ -32,7 +32,9 @@
     </target>
 
     <target name="dist" depends="build" description="generate the distribution" >
-        <jar jarfile="${dist}/MyBot.jar" basedir="${build}" manifest="${manifest}"/>
+        <jar jarfile="${botdest}.jar" basedir="${build}" manifest="${manifest}"/>
+        <zip destfile="${botdest}.zip" basedir="${src}" />
+
         <exec executable="${runcmd}" dir="${util}" />
     </target>
 
