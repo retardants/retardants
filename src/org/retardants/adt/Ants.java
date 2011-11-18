@@ -322,7 +322,8 @@ public class Ants {
     }
 
     /**
-     * Calculates distance between two locations on the game map.
+     * Calculates the square of the Euclidean distance between
+     * two locations on the game map.
      * 
      * @param t1 one location on the game map
      * @param t2 another location on the game map
