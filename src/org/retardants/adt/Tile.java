@@ -5,9 +5,9 @@ package org.retardants.adt;
  */
 public class Tile implements Comparable<Tile> {
     private final int row;
-    
+
     private final int col;
-    
+
     /**
      * Creates new {@link Tile} object.
      * 
@@ -18,7 +18,7 @@ public class Tile implements Comparable<Tile> {
         this.row = row;
         this.col = col;
     }
-    
+
     /**
      * Returns row index.
      * 
@@ -27,7 +27,7 @@ public class Tile implements Comparable<Tile> {
     public int getRow() {
         return row;
     }
-    
+
     /**
      * Returns column index.
      * 
@@ -36,7 +36,7 @@ public class Tile implements Comparable<Tile> {
     public int getCol() {
         return col;
     }
-    
+
     /** 
      * {@inheritDoc}
      */
@@ -44,7 +44,7 @@ public class Tile implements Comparable<Tile> {
     public int compareTo(Tile o) {
         return hashCode() - o.hashCode();
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -52,7 +52,7 @@ public class Tile implements Comparable<Tile> {
     public int hashCode() {
         return row * Ants.MAX_MAP_SIZE + col;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -65,7 +65,7 @@ public class Tile implements Comparable<Tile> {
         }
         return result;
     }
-    
+
     /**
      * {@inheritDoc}
      */

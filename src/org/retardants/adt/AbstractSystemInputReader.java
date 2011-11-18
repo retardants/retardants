@@ -24,7 +24,7 @@ public abstract class AbstractSystemInputReader {
             }
         }
     }
-    
+
     /**
      * Process a line read out by {@link #readSystemInput()} method in a way defined by subclass
      * implementation.

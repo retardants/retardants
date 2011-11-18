@@ -6,22 +6,22 @@ package org.retardants.adt;
 public enum Ilk {
     /** Water tile. */
     WATER,
-    
+
     /** Food tile. */
     FOOD,
-    
+
     /** Land tile. */
     LAND,
-    
+
     /** Dead ant tile. */
     DEAD,
-    
+
     /** My ant tile. */
     MY_ANT,
-    
+
     /** Enemy ant tile. */
     ENEMY_ANT;
-    
+
     /**
      * Checks if this type of tile is passable, which means it is not a water tile.
      * 
@@ -30,7 +30,7 @@ public enum Ilk {
     public boolean isPassable() {
         return ordinal() > WATER.ordinal();
     }
-    
+
     /**
      * Checks if this type of tile is unoccupied, which means it is a land tile or a dead ant tile.
      * 

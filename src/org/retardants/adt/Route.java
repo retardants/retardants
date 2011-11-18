@@ -34,7 +34,7 @@ public class Route implements Comparable<Route> {
     @Override
     public int hashCode() {
         return start.hashCode() * Ants.MAX_MAP_SIZE * Ants.MAX_MAP_SIZE 
-		+ end.hashCode();
+                + end.hashCode();
     }
 
     @Override

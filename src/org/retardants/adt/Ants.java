@@ -466,14 +466,14 @@ public class Ants {
     public void update(Ilk ilk, Tile tile) {
         map[tile.getRow()][tile.getCol()] = ilk;
         switch (ilk) {
-            case FOOD:
-                foodTiles.add(tile);
+        case FOOD:
+            foodTiles.add(tile);
             break;
-            case MY_ANT:
-                myAnts.add(tile);
+        case MY_ANT:
+            myAnts.add(tile);
             break;
-            case ENEMY_ANT:
-                enemyAnts.add(tile);
+        case ENEMY_ANT:
+            enemyAnts.add(tile);
             break;
         }
     }
