@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="retardants" default="dist">
+
+    <!-- set global properties for this build -->
+    <property name="src" location="src"/>
+    <property name="build" location="build"/>
+    <property name="dist"  location="dist"/>
+
+    <target name="init" description="Build initialization">
+        <mkdir dir="${build}" />
+
+        <!-- Perform any build initialization in this target -->
+    </target>
+
+    <target name="clean"  description="cleanup all">
+        <delete dir="${build}"/>
+    </target>
+
+    <target name="build.modules" depends="init, clean" description="build all modules">
+        <javac srcdir="${src}" destdir="${build}"/>
+    </target>
+
+    <target name="dist" depends="build.modules" description="generate the distribution" >
+        <!-- Create the distribution directory -->
+        <mkdir dir="${dist}/lib"/>
+        <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+        <jar jarfile="${dist}/lib/MyBot.jar" basedir="${build}"/>
+      </target>
+
+</project>
