@@ -33,7 +33,7 @@
 
     <target name="dist" depends="build" description="generate the distribution" >
         <jar jarfile="${dist}/MyBot.jar" basedir="${build}" manifest="${manifest}"/>
-        <exec executable="${runcmd}" />
+        <exec executable="${runcmd}" dir="${util}" />
     </target>
 
 </project>
