@@ -2,54 +2,33 @@ package org.retardants.diffusion;
 
 import org.retardants.adt.Aim;
 import org.retardants.adt.Ants;
+import org.retardants.adt.Ilk;
 import org.retardants.adt.Tile;
-
-import javax.swing.border.TitledBorder;
 import java.util.*;
 
 /**
- * Represents a 2D array of diffusion values representing the state of the
- * scents at some point in time.
+ * Represents a 2D array of diffusion values storing the state of all scents
+ * at some point in time.
  *
- * ADT = map(i,j) - A map of i rows and j columns such that map(i,j) is the diffusion
- *                  value of cell (i,j)
+ * ADT = map(i,j) - A map of i rows and j columns such that map(i,j) is the
+ *                  diffusion value of cell (i,j)
  *
  * @URL www.cs.colorado.edu/~ralex/papers/PDF/OOPSLA06antiobjects.pdf
  */
 public class DiffusionMap {
 
-    private Double[][] map;
+
+    private VersionedTileArray array;
     private Ants antContext;
-    public final static Double FOOD_COST = 100.0;
+    public final static Double FOOD_COST = 100.00;
     public final static Double DIFF_VALUE = 0.25;
 
 
     public DiffusionMap(int cols, int rows, Ants antContext) {
-        this.map = new Double[rows][cols];
+        this.array = new VersionedTileArray(rows, cols);
         this.antContext = antContext;
 
     }
-
-    /**
-     * Adds d to the diffusion value at the position represented by t
-     *
-     * @param t The position to be modified
-     * @param d The value to be added to the diffusion value at t
-     */
-    private void addValue(Tile t, Double d) {
-        map[t.getRow()][t.getCol()] += d;
-    }
-
-    /**
-     * Sets d as the diffusion value at the position represented by t
-     *
-     * @param t The position to be modified
-     * @param d The value to be set as the diffusion value at t
-     */
-    private void setValue(Tile t, Double d) {
-        map[t.getRow()][t.getCol()] = d;
-    }
-
 
     /**
      * Return the diffusion value at the position represented by t
@@ -57,17 +36,17 @@ public class DiffusionMap {
      * @param t The position for which we want the diffusion value.
      * @return The diffusion value
      */
-    private Double getValue(Tile t) {
-        return map[t.getRow()][t.getCol()];
+    public Double getValue(Tile t) {
+        return array.getCommittedValue(t);
     }
-
 
     /*
      * To each cell that now has a candy, add a scent of +FOOD_COST.
      */
     private void placeCandies(Set<Tile> candies) {
-        for (Tile candy : candies)
-            addValue(candy, FOOD_COST);
+        for (Tile candy : candies) {
+            array.setCommittedValue(candy, FOOD_COST);
+        }
     }
 
     /*
@@ -79,16 +58,30 @@ public class DiffusionMap {
      * @param j col number
      */
     private void diffuse(Tile t) {
-
         if (! antContext.getIlk(t).isUnoccupied()) {
             /* TODO(jmunizn) Set to zero if unoccupied but not food */
-            //setValue(t, 0.0);
+            if (! antContext.getIlk(t).equals(Ilk.FOOD))
+                array.setValue(t, 0.0);
         }
         else {
+            array.setValue(t, array.getCommittedValue(t));
+
+
+            Double delta = 0.0;
+            /* Set delta as:
+             * DIFF_VALUE *
+             *  \sum(array.committedValue(neighbor) - array.committedValue(t))
+             *
+             */
             for (Aim aim : Aim.values()) {
                 Tile neighbor = antContext.getTile(t, aim);
-                addValue(t, DIFF_VALUE * (getValue(neighbor)) - getValue(t));
+                delta += array.getCommittedValue(neighbor);
             }
+
+            delta -= (Aim.values().length * array.getCommittedValue(t));
+            delta *= DIFF_VALUE;
+            array.addValue(t, delta);
+
         }
 
         /* Place a value of zero if there's a non-food object blocking us */
@@ -100,11 +93,13 @@ public class DiffusionMap {
      */
     private void timeStep() {
 
-        for (int i = 0; i < map.length; i++) {
-            for (int j = 0; j < map[i].length; j++) {
+        for (int i = 0; i < antContext.getRows(); i++) {
+            for (int j = 0; j < antContext.getCols(); j++) {
                 diffuse(new Tile(i,j));
             }
         }
+
+        array.commit();
 
 
     }
@@ -118,12 +113,16 @@ public class DiffusionMap {
      *                - A candy has left our visible range
      */
     public void timeStep(int n, Set<Tile> candies) {
-       this.placeCandies(candies);
+         /* Note: Even though we have 'ants' from which we could get the
+                  candy information, we enforce this contract and promise
+                  not to use antContext to get information about candies or
+                  enemy hills.
+          */
 
-       for (int i = 0; i < n; i++) {
-           timeStep();
-       }
-
+        for (int i = 0; i < n; i++) {
+            this.placeCandies(candies);
+            timeStep();
+        }
     }
 
 }
