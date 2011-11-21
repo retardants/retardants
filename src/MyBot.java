@@ -62,6 +62,7 @@ public class MyBot extends Bot {
     public void doTurn() {
 
         Ants ants = getAnts();
+        ants.getCols();
         orders.clear(); 
 
         if (unseenTiles == null) {
