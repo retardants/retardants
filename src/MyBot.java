@@ -86,7 +86,8 @@ public class MyBot extends Bot {
 
     private boolean doMoveLocation(Tile antLoc, Tile destLoc) {
         Ants ants = getAnts();
-        List<Aim> directions = new ArrayList<Aim>(ants.getDirections(antLoc, destLoc)); 
+        List<Aim> directions =
+            new ArrayList<Aim>(ants.getDirections(antLoc, destLoc));
         Collections.shuffle(directions);
         for (Aim direction : directions) { 
             if (doMoveDirection(antLoc, direction))
@@ -116,10 +117,10 @@ public class MyBot extends Bot {
         }
 
         // Remove tiles that we're seeing this turn.
-        for (Iterator<Tile> locIter = unseenTiles.iterator(); locIter.hasNext();) {
-            Tile next = locIter.next();
+        for (Iterator<Tile> iter = unseenTiles.iterator(); iter.hasNext();) {
+            Tile next = iter.next();
             if (ants.isVisible(next)) {
-                locIter.remove(); 
+                iter.remove();
             }	
         }
         
@@ -245,7 +246,8 @@ public class MyBot extends Bot {
         for (Tile myHill : getAnts().getMyHills()) {
             if (sortedAnts.contains(myHill) 
                     && ! allOrders.containsValue(myHill)) {
-                List<Aim> directions = new ArrayList<Aim>(Arrays.asList(Aim.values()));
+                List<Aim> directions =
+                    new ArrayList<Aim>(Arrays.asList(Aim.values()));
                 Collections.shuffle(directions);
                 for (Aim direction : directions) {
                     if (doMoveDirection(myHill, direction)) {
@@ -271,7 +273,8 @@ public class MyBot extends Bot {
                 Collections.sort(unseenRoutes);
                 for (Route route : unseenRoutes) {
                     if (doMoveLocation(route.getStart(), route.getEnd())) {
-                        System.err.println("; going to EXPLORE " + route.getEnd());
+                        System.err.println(
+                            "; going to EXPLORE " + route.getEnd());
                         break;
                     }
                 }
@@ -284,9 +287,10 @@ public class MyBot extends Bot {
         // tile.
         for (final Tile antLoc : sortedAnts) {
             if (! allOrders.containsValue(antLoc)) {
-//                System.err.println("Finding EXPLORE target for ant at " + antLoc);
+//              System.err.println("Finding EXPLORE target for ant at " + antLoc);
                 // Sort directions by num-times-visited.
-                List<Aim> directions = new ArrayList<Aim>(Arrays.asList(Aim.values()));
+                List<Aim> directions =
+                    new ArrayList<Aim>(Arrays.asList(Aim.values()));
                 Collections.shuffle(directions);
                 Collections.sort(directions, new Comparator<Aim>() {
                     public int compare(Aim o1, Aim o2) {
@@ -295,9 +299,14 @@ public class MyBot extends Bot {
                     }
                 });
                 for (Aim direction : directions) {
-//                    System.err.println("Trying to move " + direction + ", which has been visited " + visitedTiles.get(getAnts().getTile(antLoc, direction)) + " times.");
+//                    System.err.println("Trying to move " + direction + ",
+//                      which has been visited " +
+//                      visitedTiles.get(getAnts().getTile(antLoc, direction))
+//                      + " times.");
                     if (doMoveDirection(antLoc, direction)) {
-                        System.err.println("; going to EXPLORE " + getAnts().getTile(antLoc, direction));
+                        System.err.println(
+                            "; going to EXPLORE "
+                             + getAnts().getTile(antLoc, direction));
                         break;
                     }
                 }
