@@ -6,6 +6,7 @@ import org.retardants.adt.*;
  * Starter bot implementation.
  */
 public class MyBot extends Bot {
+    
     /**
      * Main method executed by the game engine for starting the bot.
      * 
@@ -20,8 +21,12 @@ public class MyBot extends Bot {
     // Key: location to move to.
     // Value: location of ant moving to its key.
     private Map<Tile, Tile> allOrders = new HashMap<Tile, Tile>();
+    private Map<Tile, Integer> visitedTiles;
     private Set<Tile> unseenTiles;
     private Set<Tile> enemyHills = new HashSet<Tile>();
+    
+    private Strategy explorationStrategy = Strategy.EXPLORATION_LEAST_VISITED;
+    private int turn = 0;
 
     /**
      * Attempts to move an ant in the given direction. Fails iff
@@ -36,11 +41,12 @@ public class MyBot extends Bot {
         if (ants.getIlk(newLoc).isUnoccupied()
                 && ! allOrders.containsKey(newLoc)) {
             ants.issueOrder(antLoc, direction);
-            allOrders.put(newLoc, antLoc); 
+            allOrders.put(newLoc, antLoc);
+            System.err.print("\tAnt at " + antLoc + " moving " + direction);
             return true;
         } else {
             return false;
-        } 
+        }
     }
 
     private boolean doMoveLocation(Tile antLoc, Tile destLoc) {
@@ -60,6 +66,7 @@ public class MyBot extends Bot {
      */
     @Override
     public void doTurn() {
+        System.err.println("=====  TURN " + turn++ + " =====");
 
         Ants ants = getAnts();
         Set<Tile> sortedAnts = new TreeSet<Tile>(ants.getMyAnts());
@@ -80,6 +87,21 @@ public class MyBot extends Bot {
                 locIter.remove(); 
             }	
         }
+        
+        // Initialize visited tile map.
+        if (visitedTiles == null) {
+            visitedTiles = new HashMap<Tile, Integer>();
+            for (int row = 0; row < ants.getRows(); row++) {
+                for (int col = 0; col < ants.getCols(); col++) {
+                    visitedTiles.put(new Tile(row, col), 0);
+                }
+            }
+        }
+        
+        // Update visited tile map
+        for (Tile antLoc : sortedAnts) {
+            visitedTiles.put(antLoc, visitedTiles.get(antLoc) + 1);
+        }
 
         // Don't step on own hill.
         for (Tile myHill : ants.getMyHills()) {
@@ -96,6 +118,7 @@ public class MyBot extends Bot {
         
         // === BATTLE ===
 
+        System.err.println("BATTLE");
         // Build routes between every enemy hill and every ant.
         List<Route> hillRoutes = new ArrayList<Route>();
         for (Tile hillLoc : enemyHills) { 
@@ -111,11 +134,14 @@ public class MyBot extends Bot {
         // Assign all ants to go to the enemy hill, starting with min routes first.
         Collections.sort(hillRoutes);
         for (Route route : hillRoutes) {
-            doMoveLocation(route.getStart(), route.getEnd());
+            if (doMoveLocation(route.getStart(), route.getEnd())) {
+                System.err.println("; killing HILL at " + route.getEnd());
+            }
         }
-
+        
         // === FOOD ===
         
+        System.err.println("FOOD");
         Map<Tile, Tile> foodOrders = new HashMap<Tile, Tile>();
         List<Route> foodRoutes = new ArrayList<Route>();
         Set<Tile> sortedFood = new TreeSet<Tile>(ants.getFoodTiles());
@@ -129,7 +155,7 @@ public class MyBot extends Bot {
                     Route route = new Route(antLoc, foodLoc, distance);
                     foodRoutes.add(route);
                 }
-            }	
+            }
         }
 
         // Assign one food target to each ant, starting with min routes first.
@@ -139,38 +165,82 @@ public class MyBot extends Bot {
                     && ! foodOrders.containsValue(route.getStart())
                     && doMoveLocation(route.getStart(), route.getEnd())) {
                 foodOrders.put(route.getEnd(), route.getStart());
+                System.err.println("; fetching FOOD at " + route.getEnd());
             }
         }
         
         // === EXPLORATION ===
 
+        System.err.println("EXPLORATION");
+        switch (explorationStrategy) {
+        case EXPLORATION_LEAST_VISITED:
+            exploreLeastVisited(sortedAnts);
+            break;
+        case EXPLORATION_NEAREST_UNSEEN:
+            exploreNearestUnseen(sortedAnts);
+        }
+
+        // Move ants off our hills in a random direction.
+        System.err.println("ANTS OFF HILL");
+        for (Tile myHill : getAnts().getMyHills()) {
+            if (sortedAnts.contains(myHill) 
+                    && ! allOrders.containsValue(myHill)) {
+                List<Aim> directions = new ArrayList<Aim>(Arrays.asList(Aim.values()));
+                Collections.shuffle(directions);
+                for (Aim direction : directions) {
+                    if (doMoveDirection(myHill, direction)) {
+                        System.err.println();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    private void exploreNearestUnseen(Set<Tile> sortedAnts) {
         // For each ant that doens't have an order yet, make it go to the closest
-        // unseen tile. 
+        // unseen tile.
         for (Tile antLoc : sortedAnts) {
             if (! allOrders.containsValue(antLoc)) {
                 List<Route> unseenRoutes = new ArrayList<Route>();
                 for (Tile unseenLoc : unseenTiles) {
-                    int distance = ants.getDistance(antLoc, unseenLoc);
+                    int distance = getAnts().getDistance(antLoc, unseenLoc);
                     Route route = new Route(antLoc, unseenLoc, distance);
                     unseenRoutes.add(route);
                 }
                 Collections.sort(unseenRoutes);
                 for (Route route : unseenRoutes) {
-                    if (doMoveLocation(route.getStart(), route.getEnd()))
+                    if (doMoveLocation(route.getStart(), route.getEnd())) {
+                        System.err.println("; going to EXPLORE " + route.getEnd());
                         break;
+                    }
                 }
             }
         }
-
-        // Move ants off our hills in a random direction. 
-        for (Tile myHill : ants.getMyHills()) {
-            if (ants.getMyAnts().contains(myHill) 
-                    && ! allOrders.containsValue(myHill)) {
-                List<Aim> aims = new ArrayList<Aim>(Arrays.asList(Aim.values()));
-                Collections.shuffle(aims);
-                for (Aim direction : aims) {
-                    if (doMoveDirection(myHill, direction))
+    }
+    
+    private void exploreLeastVisited(Set<Tile> sortedAnts) {
+        // For each order-less ant, send it to the least-visited neighboring
+        // tile.
+        for (final Tile antLoc : sortedAnts) {
+            if (! allOrders.containsValue(antLoc)) {
+//                System.err.println("Finding EXPLORE target for ant at " + antLoc);
+                // Sort directions by num-times-visited.
+                List<Aim> directions = new ArrayList<Aim>(Arrays.asList(Aim.values()));
+                Collections.shuffle(directions);
+                Collections.sort(directions, new Comparator<Aim>() {
+                    @Override
+                    public int compare(Aim o1, Aim o2) {
+                        return visitedTiles.get(getAnts().getTile(antLoc, o1)) -
+                                visitedTiles.get(getAnts().getTile(antLoc, o2));
+                    }
+                });
+                for (Aim direction : directions) {
+//                    System.err.println("Trying to move " + direction + ", which has been visited " + visitedTiles.get(getAnts().getTile(antLoc, direction)) + " times.");
+                    if (doMoveDirection(antLoc, direction)) {
+                        System.err.println("; going to EXPLORE " + getAnts().getTile(antLoc, direction));
                         break;
+                    }
                 }
             }
         }

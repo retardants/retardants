@@ -71,6 +71,6 @@ public class Tile implements Comparable<Tile> {
      */
     @Override
     public String toString() {
-        return row + " " + col;
+        return "(" + row + ", " + col + ")";
     }
 }
