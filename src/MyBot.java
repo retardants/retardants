@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.util.*; 
 import org.retardants.adt.*;
+import org.retardants.diffusion.DiffusionMap;
 
 /**
  * Starter bot implementation.
@@ -23,6 +24,39 @@ public class MyBot extends Bot {
     private Set<Tile> unseenTiles;
     private Set<Tile> enemyHills = new HashSet<Tile>();
 
+
+
+    DiffusionMap diffusionMap;
+
+
+    @Override
+    public void setup(
+        int loadTime,
+        int turnTime,
+        int rows,
+        int cols,
+        int turns,
+        int viewRadius2,
+        int attackRadius2,
+        int spawnRadius2) {
+
+        super.setup(
+            loadTime,
+            turnTime,
+            rows,
+            cols,
+            turns,
+            viewRadius2,
+            attackRadius2,
+            spawnRadius2);
+
+        Ants ants = getAnts();
+        if (ants == null)
+            throw new RuntimeException("Null value for ants");
+
+        diffusionMap = new DiffusionMap(ants.getCols(), ants.getRows(), ants);
+    }
+
     /**
      * Attempts to move an ant in the given direction. Fails iff
      * the Tile is occupied or if we've already issued an order for
@@ -30,6 +64,7 @@ public class MyBot extends Bot {
      * TODO(ipince): revise definition of isOccupied()
      */
     private boolean doMoveDirection(Tile antLoc, Aim direction) {
+
         Ants ants = getAnts();
         Tile newLoc = ants.getTile(antLoc, direction);
 
@@ -40,7 +75,7 @@ public class MyBot extends Bot {
             return true;
         } else {
             return false;
-        } 
+        }
     }
 
     private boolean doMoveLocation(Tile antLoc, Tile destLoc) {
@@ -115,13 +150,37 @@ public class MyBot extends Bot {
         }
 
         // === FOOD ===
-        
+
         Map<Tile, Tile> foodOrders = new HashMap<Tile, Tile>();
         List<Route> foodRoutes = new ArrayList<Route>();
         Set<Tile> sortedFood = new TreeSet<Tile>(ants.getFoodTiles());
 
         // Build routes between every food and every ant.
-        // TODO(ipince): why do we care that the food/ants be sorted?
+
+        diffusionMap.timeStep(100, ants.getFoodTiles());
+        /* For each ant, move in the direction of increasing diffusion value */
+
+        for (Tile antLoc : sortedAnts) {
+            Double bestValue = Double.MIN_VALUE;
+            Aim bestAim  = null;
+
+            for (Aim aim : Aim.values()) {
+                Tile neighbor = ants.getTile(antLoc, aim);
+                Double neighborValue = diffusionMap.getValue(neighbor);
+                if (neighborValue > bestValue) {
+                    bestValue = neighborValue;
+                    bestAim = aim;
+                }
+
+
+            }
+
+            if (! allOrders.containsValue(antLoc) && bestAim != null)
+                doMoveDirection(antLoc, bestAim);
+        }
+
+
+  /*      // TODO(ipince): why do we care that the food/ants be sorted?
         for (Tile foodLoc : sortedFood) {
             for (Tile antLoc : sortedAnts) {
                 if (! allOrders.containsValue(antLoc)) {
@@ -141,7 +200,9 @@ public class MyBot extends Bot {
                 foodOrders.put(route.getEnd(), route.getStart());
             }
         }
-        
+             */
+
+
         // === EXPLORATION ===
 
         // For each ant that doens't have an order yet, make it go to the closest
