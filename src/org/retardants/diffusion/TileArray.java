@@ -20,7 +20,7 @@ public class TileArray {
      * @param t The position to be modified
      * @param d The value to be added to the diffusion value at t
      */
-    public void addValue(Tile t, Double d) {
+    public void addValue(Tile t, double d) {
         map[t.getRow()][t.getCol()] += d;
     }
 
@@ -42,7 +42,7 @@ public class TileArray {
      * @param t The position to be modified
      * @param d The value to be set as the diffusion value at t
      */
-    public void setValue(Tile t, Double d) {
+    public void setValue(Tile t, double d) {
         map[t.getRow()][t.getCol()] = d;
     }
 

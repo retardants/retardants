@@ -187,12 +187,12 @@ public class MyBot extends Bot {
         /* For each ant, move in the direction of increasing diffusion value */
 
         for (Tile antLoc : sortedAnts) {
-            Double bestValue = Double.MIN_VALUE;
+            double bestValue = Double.MIN_VALUE;
             Aim bestAim  = null;
 
             for (Aim aim : Aim.values()) {
                 Tile neighbor = ants.getTile(antLoc, aim);
-                Double neighborValue = diffusionMap.getValue(neighbor);
+                double neighborValue = diffusionMap.getValue(neighbor);
                 if (neighborValue > bestValue) {
                     bestValue = neighborValue;
                     bestAim = aim;

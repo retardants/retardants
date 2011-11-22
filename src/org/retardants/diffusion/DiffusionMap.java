@@ -18,15 +18,44 @@ import java.util.*;
 public class DiffusionMap {
 
 
+    /* Static default values */
+    public final static double DEFAULT_FOOD_COST = 100.00;
+    public final static double  DEFAULT_DIFF_VALUE = 0.25;
+
     private VersionedTileArray array;
     private Ants antContext;
-    public final static Double FOOD_COST = 100.00;
-    public final static Double DIFF_VALUE = 0.25;
+    private double diffValue;
+    private double foodCost;
 
 
-    public DiffusionMap(int cols, int rows, Ants antContext) {
+
+    /* TODO(jmunizn): Change order as rows, cols */
+    /**
+     * Construct a DiffusionMap by specifying all its parameters, including
+     * the amount of scent emitted by its sources, along with the diffusion
+     * coefficient.
+     *
+     * @param cols The number of columns in the grid
+     * @param rows The number of rows in the grid
+     * @param antContext The ants object corresponding to this bot. This object
+     *                   is used to get information about the Ilks corresponding
+     *                   to each Tile.
+     */
+    protected DiffusionMap(
+        int cols,
+        int rows,
+        Ants antContext,
+        double diffValue,
+        double foodCost) {
+
         this.array = new VersionedTileArray(rows, cols);
         this.antContext = antContext;
+        this.diffValue =  diffValue;
+        this.foodCost = foodCost;
+    }
+
+    public DiffusionMap(int cols, int rows, Ants antContext) {
+        this(cols, rows, antContext, DEFAULT_DIFF_VALUE, DEFAULT_FOOD_COST);
 
     }
 
@@ -45,7 +74,7 @@ public class DiffusionMap {
      */
     private void placeCandies(Set<Tile> candies) {
         for (Tile candy : candies) {
-            array.setCommittedValue(candy, FOOD_COST);
+            array.setCommittedValue(candy, foodCost);
         }
     }
 
@@ -67,7 +96,7 @@ public class DiffusionMap {
             array.setValue(t, array.getCommittedValue(t));
 
 
-            Double delta = 0.0;
+            double delta = 0.0;
             /* Set delta as:
              * DIFF_VALUE *
              *  \sum(array.committedValue(neighbor) - array.committedValue(t))
@@ -79,7 +108,7 @@ public class DiffusionMap {
             }
 
             delta -= (Aim.values().length * array.getCommittedValue(t));
-            delta *= DIFF_VALUE;
+            delta *= diffValue;
             array.addValue(t, delta);
 
         }
