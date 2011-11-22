@@ -42,7 +42,6 @@ public class MyBot extends Bot {
     private Map<Tile, Tile> allOrders = new HashMap<Tile, Tile>();
     private Map<Tile, Integer> visitedTiles;
     private Set<Tile> unseenTiles;
-    private Set<Tile> enemyHills = new HashSet<Tile>();
     
     private Strategy battleStrategy = Strategy.BATTLE_DIJKSTRAS_TILE_PATH;
     private Strategy foodStrategy = Strategy.FOOD_DIFFUSION_ONE_ANT_PER_FOOD;
@@ -117,16 +116,15 @@ public class MyBot extends Bot {
     private void printTime(String msg) {
         System.err.println("Remaining after " + msg + ": " + getAnts().getTimeRemaining());
     }
-
+    
     /**
      * For every ant check every direction in fixed order (N, E, S, W) and move
      * it if the tile is passable.
      */
     @Override
     public void doTurn() {
-        System.err.println("=====  TURN " + turn++ + " =====");
+        System.err.println("=====  TURN " + ++turn + " =====");
         printTime("nothing");
-        long start = System.currentTimeMillis();
 
         Ants ants = getAnts();
         Set<Tile> sortedAnts = new TreeSet<Tile>(ants.getMyAnts());
@@ -171,23 +169,12 @@ public class MyBot extends Bot {
             allOrders.put(myHill, null);
         }
 
-        // Add newly seen enemy hill.
-        enemyHills.clear();
-        for (Tile enemyHill : ants.getEnemyHills()) {
-            // If we've visited this hill before, it's dead!
-            if (!enemyHills.contains(enemyHill) && visitedTiles.get(enemyHill) == 0) {
-                enemyHills.add(enemyHill);
-            }
-        }
-        printTime("enemy hills");
-        
         // === FOOD ===
 
         // TODO(ipince): fix timings. We should probably calculate TilePaths first, but issue
         // orders later.
         Set<Tile> candies = ants.getFoodTiles();
         System.err.println("FOOD (" + candies.size() + " candies)");
-        long foodStart = System.currentTimeMillis();
         switch (foodStrategy) {
         case FOOD_DIFFUSION_ALL_ANTS:
             foodDiffusionAllAnts(sortedAnts);
@@ -199,12 +186,11 @@ public class MyBot extends Bot {
             foodShortestEuclideanRoute(sortedAnts);
             break;
         }
-        System.err.println("Food phase: " + (System.currentTimeMillis() - foodStart) + "ms");
+        printTime("food");
 
         // === BATTLE ===
 
-        System.err.println("BATTLE (" + enemyHills.size() + " known hills)");
-        long battleStart = System.currentTimeMillis();
+        System.err.println("BATTLE (" + ants.getEnemyHills().size() + " known hills)");
         switch (battleStrategy) {
         case BATTLE_DIJKSTRAS_TILE_PATH:
             battleDijkstrasTilePath(sortedAnts);
@@ -213,12 +199,11 @@ public class MyBot extends Bot {
             battleShortestEuclideanRoute(sortedAnts);
             break;
         }
-        System.err.println("Battle phase: " + (System.currentTimeMillis() - battleStart) + "ms");
+        printTime("battle");
 
         // === EXPLORATION ===
 
         System.err.println("EXPLORATION");
-        long explorationStart = System.currentTimeMillis();
         switch (explorationStrategy) {
         case EXPLORATION_LEAST_VISITED:
             exploreLeastVisited(sortedAnts);
@@ -227,7 +212,7 @@ public class MyBot extends Bot {
             exploreNearestUnseen(sortedAnts);
             break;
         }
-        System.err.println("Exploration phase: " + (System.currentTimeMillis() - explorationStart) + "ms");
+        printTime("exploration");
 
         // Move ants off our hills in a random direction.
         System.err.println("ANTS OFF HILL");
@@ -246,12 +231,12 @@ public class MyBot extends Bot {
             }
         }
         
-        System.err.println("Turn took: " + (System.currentTimeMillis() - start) + "ms");
+        printTime("turn is done");
     }
     
     private void battleDijkstrasTilePath(Set<Tile> sortedAnts) {
         Map<Tile, Set<TilePath>> paths = null;
-        for (Tile hillLoc : enemyHills) {
+        for (Tile hillLoc : getAnts().getEnemyHills()) {
             // For each enemy hill, find the shortest tile-path to each ant.
             // Use at most 50% of the time.
             paths = PathMap.findBestPaths(getAnts(), hillLoc, sortedAnts, getAnts().getTimeRemaining()/2);
@@ -286,7 +271,7 @@ public class MyBot extends Bot {
     private void battleShortestEuclideanRoute(Set<Tile> sortedAnts) {
         // Build routes between every enemy hill and every ant.
         List<Route> hillRoutes = new ArrayList<Route>();
-        for (Tile hillLoc : enemyHills) { 
+        for (Tile hillLoc : getAnts().getEnemyHills()) { 
             for (Tile antLoc : sortedAnts) { 
                 if (! allOrders.containsValue(antLoc)) {
                     int distance = getAnts().getDistance(antLoc, hillLoc);

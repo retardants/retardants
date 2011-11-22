@@ -48,6 +48,7 @@ public abstract class Bot extends AbstractSystemInputParser {
         ants.clearDeadAnts();
         ants.getOrders().clear();
         ants.clearVision();
+        System.err.println("Remaining after beforeUpdate(): " + ants.getTimeRemaining());
     }
 
     /**
@@ -95,6 +96,8 @@ public abstract class Bot extends AbstractSystemInputParser {
      */
     @Override
     public void afterUpdate() {
+        System.err.println("Remaining after update(): " + ants.getTimeRemaining());
         ants.setVision();
+        System.err.println("Remaining after afterUpdate(): " + ants.getTimeRemaining());
     }
 }
