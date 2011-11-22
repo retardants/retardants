@@ -92,34 +92,36 @@ public class DiffusionMap {
      * Perform a single diffusion time step
      */
     private void timeStep() {
-
         for (int i = 0; i < antContext.getRows(); i++) {
             for (int j = 0; j < antContext.getCols(); j++) {
                 diffuse(new Tile(i,j));
             }
         }
-
         array.commit();
-
-
     }
 
     /**
      * Perform n time steps
      * @param n The number of time steps to perform
      * @param candies The set of candies visible to our ants during this turn.
-     *                This set may vary across time steps for  these reasons:
+     *                This set may vary across time steps for these reasons:
      *                - A candy was consumed by us or the opponent.
      *                - A candy has left our visible range
      */
-    public void timeStep(int n, Set<Tile> candies) {
+    public void timeStep(int n, Set<Tile> candies, long maxTime) {
          /* Note: Even though we have 'ants' from which we could get the
                   candy information, we enforce this contract and promise
                   not to use antContext to get information about candies or
                   enemy hills.
           */
 
+        System.err.println("Diffusion map has maxTime of " + maxTime);
+        long start = System.currentTimeMillis();
         for (int i = 0; i < n; i++) {
+            if ((System.currentTimeMillis() - start) > maxTime) {
+                System.err.println("Time elapsed for diffusion map! Exiting after " + i + " iterations.");
+                break;
+            }
             this.placeCandies(candies);
             timeStep();
         }
