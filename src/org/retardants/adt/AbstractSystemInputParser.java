@@ -48,7 +48,7 @@ public abstract class AbstractSystemInputParser extends AbstractSystemInputReade
     public void processLine(String line) {
         if (line.equals(READY)) {
             parseSetup(input);
-//            doTurn();
+            doTurn();
             finishTurn();
             input.clear();
         } else if (line.equals(GO)) {
