@@ -3,7 +3,7 @@ package org.retardants.diffusion;
 import org.retardants.adt.Tile;
 
 /**
- * Represents a TileArray isntance with two √ersions: a current (uncommitted)
+ * Represents a TileArray isntance with two versions: a current (uncommitted)
  * version and an old (committed) version.
  *
  * The uncommitted version can be modified, whereas the committed verson should
