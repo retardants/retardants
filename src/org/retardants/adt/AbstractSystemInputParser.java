@@ -48,7 +48,6 @@ public abstract class AbstractSystemInputParser extends AbstractSystemInputReade
     public void processLine(String line) {
         if (line.equals(READY)) {
             parseSetup(input);
-            doTurn();
             finishTurn();
             input.clear();
         } else if (line.equals(GO)) {
@@ -131,39 +130,29 @@ public abstract class AbstractSystemInputParser extends AbstractSystemInputReade
             if (line.isEmpty()) {
                 continue;
             }
-            Scanner scanner = new Scanner(line);
-            if (!scanner.hasNext()) {
+            
+            String parts[] = line.split(" ");
+            if (parts.length == 0) {
                 continue;
-            }
-            String token = scanner.next().toUpperCase();
-            if (!UpdateToken.PATTERN.matcher(token).matches()) {
-                continue;
-            }
-            UpdateToken updateToken = UpdateToken.valueOf(token);
-            int row = scanner.nextInt();
-            int col = scanner.nextInt();
-            switch (updateToken) {
-            case W:
-                addWater(row, col);
-                break;
-            case A:
-                if (scanner.hasNextInt()) {
-                    addAnt(row, col, scanner.nextInt());
+            } else if (parts.length == 3) {
+                int row = Integer.parseInt(parts[1]);
+                int col = Integer.parseInt(parts[2]);
+                if (parts[0].equals("w")) {
+                    addWater(row, col);
+                } else if (parts[0].equals("f")) {
+                    addFood(row, col);
                 }
-                break;
-            case F:
-                addFood(row, col);
-                break;
-            case D:
-                if (scanner.hasNextInt()) {
-                    removeAnt(row, col, scanner.nextInt());
+            } else if (parts.length == 4) {
+                int row = Integer.parseInt(parts[1]);
+                int col = Integer.parseInt(parts[2]);
+                int owner = Integer.parseInt(parts[3]);
+                if (parts[0].equals("a")) {
+                    addAnt(row, col, owner);
+                } else if (parts[0].equals("h")) {
+                    addHill(row, col, owner);
+                } else if (parts[0].equals("d")) {
+                    removeAnt(row, col, owner);
                 }
-                break;
-            case H:
-                if (scanner.hasNextInt()) {
-                    addHill(row, col, scanner.nextInt());
-                }
-                break;
             }
         }
         afterUpdate();
