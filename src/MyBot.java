@@ -1,6 +1,7 @@
 import java.io.IOException;
-import java.util.*; 
+import java.util.*;
 import org.retardants.adt.*;
+import org.retardants.bot.TaskManager;
 import org.retardants.diffusion.DiffusionMap;
 
 /**
@@ -9,9 +10,9 @@ import org.retardants.diffusion.DiffusionMap;
 public class MyBot extends Bot {
     /**
      * Main method executed by the game engine for starting the bot.
-     * 
+     *
      * @param args command line arguments
-     * 
+     *
      * @throws java.io.IOException if an I/O error occurs
      */
     public static void main(String[] args) throws IOException {
@@ -25,30 +26,24 @@ public class MyBot extends Bot {
     private Set<Tile> enemyHills = new HashSet<Tile>();
 
 
+    private TaskManager manager = new TaskManager();
+
 
     DiffusionMap diffusionMap;
 
 
     @Override
-    public void setup(
-        int loadTime,
-        int turnTime,
-        int rows,
-        int cols,
-        int turns,
-        int viewRadius2,
-        int attackRadius2,
-        int spawnRadius2) {
+    public void setup (
+            int loadTime,
+            int turnTime,
+            int rows,
+            int cols,
+            int turns,
+            int viewRadius2,
+            int attackRadius2,
+            int spawnRadius2) {
 
-        super.setup(
-            loadTime,
-            turnTime,
-            rows,
-            cols,
-            turns,
-            viewRadius2,
-            attackRadius2,
-            spawnRadius2);
+        super.setup(loadTime, turnTime, rows, cols, turns, viewRadius2, attackRadius2, spawnRadius2);
 
         Ants ants = getAnts();
         if (ants == null)
@@ -71,7 +66,7 @@ public class MyBot extends Bot {
         if (ants.getIlk(newLoc).isUnoccupied()
                 && ! allOrders.containsKey(newLoc)) {
             ants.issueOrder(antLoc, direction);
-            allOrders.put(newLoc, antLoc); 
+            allOrders.put(newLoc, antLoc);
             return true;
         } else {
             return false;
@@ -80,14 +75,16 @@ public class MyBot extends Bot {
 
     private boolean doMoveLocation(Tile antLoc, Tile destLoc) {
         Ants ants = getAnts();
-        List<Aim> directions = new ArrayList<Aim>(ants.getDirections(antLoc, destLoc)); 
+        List<Aim> directions = new ArrayList<Aim>(ants.getDirections(antLoc, destLoc));
         Collections.shuffle(directions);
-        for (Aim direction : directions) { 
+        for (Aim direction : directions) {
             if (doMoveDirection(antLoc, direction))
                 return true;
         }
         return false;
     }
+
+
 
     /**
      * For every ant check every direction in fixed order (N, E, S, W) and move
@@ -95,10 +92,25 @@ public class MyBot extends Bot {
      */
     @Override
     public void doTurn() {
-
         Ants ants = getAnts();
-        Set<Tile> sortedAnts = new TreeSet<Tile>(ants.getMyAnts());
-        allOrders.clear(); 
+
+        turnInit(ants);
+        generateCommands(ants);
+
+    }
+
+
+    /**
+     * Performs all necessary initializations at the start of the turn.
+     * These initializations include the initialization of all the bot's
+     * field to sane values (allOrders, manager, unseenTiles, enemyHills)
+     *
+     * @param ants The global ant context
+     */
+    public void turnInit(Ants ants) {
+
+        allOrders.clear();
+        manager.newTurn();
 
         // Initialize unseen tiles set.
         if (unseenTiles == null) {
@@ -112,8 +124,8 @@ public class MyBot extends Bot {
         for (Iterator<Tile> locIter = unseenTiles.iterator(); locIter.hasNext();) {
             Tile next = locIter.next();
             if (ants.isVisible(next)) {
-                locIter.remove(); 
-            }	
+                locIter.remove();
+            }
         }
 
         // Don't step on own hill.
@@ -128,13 +140,22 @@ public class MyBot extends Bot {
                 enemyHills.add(enemyHill);
             }
         }
-        
+    }
+
+    /**
+     * Generates all reasonable commands that an ant could perform and inserts
+     * them into manager.
+     *
+     * @param ants The global ant context
+     */
+    private void generateCommands(Ants ants) {
+        Set<Tile> sortedAnts = new TreeSet<Tile>(ants.getMyAnts());
         // === BATTLE ===
 
         // Build routes between every enemy hill and every ant.
         List<Route> hillRoutes = new ArrayList<Route>();
-        for (Tile hillLoc : enemyHills) { 
-            for (Tile antLoc : sortedAnts) { 
+        for (Tile hillLoc : enemyHills) {
+            for (Tile antLoc : sortedAnts) {
                 if (! allOrders.containsValue(antLoc)) {
                     int distance = ants.getDistance(antLoc, hillLoc);
                     Route route = new Route(antLoc, hillLoc, distance);
@@ -180,33 +201,10 @@ public class MyBot extends Bot {
         }
 
 
-  /*      // TODO(ipince): why do we care that the food/ants be sorted?
-        for (Tile foodLoc : sortedFood) {
-            for (Tile antLoc : sortedAnts) {
-                if (! allOrders.containsValue(antLoc)) {
-                    int distance = ants.getDistance(antLoc, foodLoc);
-                    Route route = new Route(antLoc, foodLoc, distance);
-                    foodRoutes.add(route);
-                }
-            }	
-        }
-
-        // Assign one food target to each ant, starting with min routes first.
-        Collections.sort(foodRoutes);
-        for (Route route : foodRoutes) {
-            if (! foodOrders.containsKey(route.getEnd())
-                    && ! foodOrders.containsValue(route.getStart())
-                    && doMoveLocation(route.getStart(), route.getEnd())) {
-                foodOrders.put(route.getEnd(), route.getStart());
-            }
-        }
-             */
-
-
         // === EXPLORATION ===
 
         // For each ant that doens't have an order yet, make it go to the closest
-        // unseen tile. 
+        // unseen tile.
         for (Tile antLoc : sortedAnts) {
             if (! allOrders.containsValue(antLoc)) {
                 List<Route> unseenRoutes = new ArrayList<Route>();
@@ -223,9 +221,9 @@ public class MyBot extends Bot {
             }
         }
 
-        // Move ants off our hills in a random direction. 
+        // Move ants off our hills in a random direction.
         for (Tile myHill : ants.getMyHills()) {
-            if (ants.getMyAnts().contains(myHill) 
+            if (ants.getMyAnts().contains(myHill)
                     && ! allOrders.containsValue(myHill)) {
                 List<Aim> aims = new ArrayList<Aim>(Arrays.asList(Aim.values()));
                 Collections.shuffle(aims);
