@@ -3,7 +3,7 @@ package org.retardants.diffusion;
 import org.retardants.adt.Tile;
 
 /**
- * Represents a TileArray isntance with two √ersions: a current (uncommitted)
+ * Represents a TileArray isntance with two versions: a current (uncommitted)
  * version and an old (committed) version.
  *
  * The uncommitted version can be modified, whereas the committed verson should
@@ -42,7 +42,7 @@ public class VersionedTileArray {
      * @param t The position to be modified
      * @param d The value to be set as the diffusion value at t
      */
-    public void setValue(Tile t, Double d) {
+    public void setValue(Tile t, double d) {
         arrays[uncommittedVersion].setValue(t, d);
     }
 
@@ -56,7 +56,7 @@ public class VersionedTileArray {
      * @param t The position to be modified
      * @param d The value to be set as the diffusion value at t
      */
-    public void setCommittedValue(Tile t, Double d) {
+    public void setCommittedValue(Tile t, double d) {
         arrays[committedVersion].setValue(t, d);
     }
 
@@ -68,7 +68,7 @@ public class VersionedTileArray {
      * @param t The position to be modified
      * @param d The value to be added to the diffusion value at t
      */
-    public void addValue(Tile t, Double d) {
+    public void addValue(Tile t, double d) {
         arrays[uncommittedVersion].addValue(t, d);
     }
 
@@ -80,7 +80,7 @@ public class VersionedTileArray {
      * @param t The position for which we want the diffusion value.
      * @return The diffusion value
      */
-    public Double getCommittedValue(Tile t) {
+    public double getCommittedValue(Tile t) {
         return arrays[committedVersion].getValue(t);
     }
 
