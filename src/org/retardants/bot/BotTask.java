@@ -20,10 +20,10 @@ import org.retardants.adt.Tile;
  *
  *
  */
-public class BotCommand {
+public class BotTask {
 
     /**
-     * Describes the type of command represented by a BotCommand object.
+     * Describes the type of command represented by a BotTask object.
      * This command type is defined depending on the purpose why an ant is
      * performing a move, along with the priority we attach to this action.
      *
@@ -58,7 +58,7 @@ public class BotCommand {
     private Tile destination;
     private int cost;
 
-    public BotCommand(CommandType type, Tile destination, int cost) {
+    public BotTask(CommandType type, Tile destination, int cost) {
         this.type = type;
         this.destination = destination;
         this.cost = cost;

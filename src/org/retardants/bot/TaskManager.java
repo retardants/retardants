@@ -1,6 +1,5 @@
 package org.retardants.bot;
 
-import org.retardants.bot.BotCommand;
 import org.retardants.adt.Tile;
 
 import java.util.*;
@@ -46,9 +45,9 @@ public class TaskManager {
                 c.type.priority / c.cost
 
      */
-    private Comparator<BotCommand> comparator = new Comparator<BotCommand>() {
+    private Comparator<BotTask> comparator = new Comparator<BotTask>() {
         @Override
-        public int compare(BotCommand o1, BotCommand o2) {
+        public int compare(BotTask o1, BotTask o2) {
             Double weight1 = (o1.getType().getPriority() + 0.0) / o1.getCost();
             Double weight2 = (o2.getType().getPriority() + 0.0) / o2.getCost();
 
@@ -61,19 +60,19 @@ public class TaskManager {
 
     private static int PRIORITY_QUEUE_INITIAL_CAPACITY = 10;
 
-    private Map<Tile, PriorityQueue<BotCommand>> tasks =
-            new HashMap<Tile, PriorityQueue<BotCommand>>();
+    private Map<Tile, PriorityQueue<BotTask>> tasks =
+            new HashMap<Tile, PriorityQueue<BotTask>>();
 
 
-    public void addTask(Tile ant, BotCommand command) {
-        PriorityQueue<BotCommand> taskSet = tasks.get(ant);
+    public void addTask(Tile ant, BotTask task) {
+        PriorityQueue<BotTask> taskSet = tasks.get(ant);
         if (taskSet == null)
-            taskSet = new PriorityQueue<BotCommand>(
+            taskSet = new PriorityQueue<BotTask>(
                     PRIORITY_QUEUE_INITIAL_CAPACITY,
                     comparator);
 
 
-        taskSet.add(command);
+        taskSet.add(task);
         tasks.put(ant, taskSet);
 
 
@@ -88,8 +87,8 @@ public class TaskManager {
      * @return The command with the highest weight that hasn't been popped
      *          this turn.
      */
-    public BotCommand pollCommand(Tile ant) {
-        PriorityQueue<BotCommand> taskSet = tasks.get(ant);
+    public BotTask pollCommand(Tile ant) {
+        PriorityQueue<BotTask> taskSet = tasks.get(ant);
         if (taskSet == null)
             return null;
 

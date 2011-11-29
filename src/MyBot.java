@@ -2,7 +2,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,10 +12,8 @@ import java.util.TreeSet;
 import org.retardants.adt.Aim;
 import org.retardants.adt.Ants;
 import org.retardants.adt.Bot;
-import org.retardants.adt.Route;
-import org.retardants.adt.Strategy;
 import org.retardants.adt.Tile;
-import org.retardants.bot.BotCommand;
+import org.retardants.bot.BotTask;
 import org.retardants.bot.TaskManager;
 import org.retardants.diffusion.DiffusionMap;
 import org.retardants.path.PathMap;
@@ -213,12 +210,12 @@ public class MyBot extends Bot {
     public void processCommands(Ants ants) {
 
          for (Tile ant : ants.getMyAnts()) {
-             BotCommand command = null;
+             BotTask task = null;
              do {
-                command = taskManager.pollCommand(ant);
-                 System.err.println("Inspecitng command " + command);
+                task = taskManager.pollCommand(ant);
+                 System.err.println("Inspecitng task " + task);
              }
-             while (command != null && ! doMoveLocation(ant, command.getDestination()));
+             while (task != null && ! doMoveLocation(ant, task.getDestination()));
          }
     }
 
@@ -271,8 +268,8 @@ public class MyBot extends Bot {
 
                             taskManager.addTask(
                                     antLoc,
-                                    new BotCommand(
-                                            BotCommand.CommandType.BATTLE_COMMAND,
+                                    new BotTask(
+                                            BotTask.CommandType.BATTLE_COMMAND,
                                             iter.next(),
                                             (int) Math.round(path.cost()))
                             );
@@ -348,9 +345,9 @@ public class MyBot extends Bot {
 
                     taskManager.addTask(
                             antLoc,
-                            new BotCommand(
-                                    (numSteps > 7 ? BotCommand.CommandType.EXPLORATION_COMMAND :
-                                                    BotCommand.CommandType.FOOD_COMMAND),
+                            new BotTask(
+                                    (numSteps > 7 ? BotTask.CommandType.EXPLORATION_COMMAND :
+                                                    BotTask.CommandType.FOOD_COMMAND),
                                     ants.getTile(antLoc, bestAim),
                                     /* TODO: This needs to be moved to DiffusionMap */
                                     /* if k steps away from a source, then
