@@ -28,7 +28,7 @@ public class BotCommand {
      * performing a move, along with the priority we attach to this action.
      *
      */
-    enum CommandType {
+    public enum CommandType {
         /* Design detail:
 
            We include a centralized location for specifying all command types
@@ -52,7 +52,9 @@ public class BotCommand {
     };
 
 
+
     private CommandType type;
+    /* The immediate destination after moving one step */
     private Tile destination;
     private int cost;
 
@@ -71,7 +73,9 @@ public class BotCommand {
         return cost;
     }
 
-
+    public Tile getDestination() {
+        return destination;
+    }
     public String toString() {
         String cmd = "";
         cmd += "[";

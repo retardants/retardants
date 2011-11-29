@@ -88,8 +88,9 @@ public class DiffusionMap {
      */
     private void diffuse(Tile t) {
         if (! antContext.getIlk(t).isUnoccupied()) {
-            /* TODO(jmunizn) Set to zero if unoccupied but not food */
-            if (! antContext.getIlk(t).equals(Ilk.FOOD))
+            /* TODO(jmunizn) Set to zero if unoccupied but not food or enemies */
+            if (! antContext.getIlk(t).equals(Ilk.FOOD)
+                  && ! antContext.getIlk(t).equals(Ilk.ENEMY_ANT))
                 array.setValue(t, 0.0);
         }
         else {

@@ -91,7 +91,7 @@ public class TaskManager {
     public BotCommand pollCommand(Tile ant) {
         PriorityQueue<BotCommand> taskSet = tasks.get(ant);
         if (taskSet == null)
-            throw new IllegalStateException("Ant has no corresponding tasks");
+            return null;
 
 
         return taskSet.poll();
