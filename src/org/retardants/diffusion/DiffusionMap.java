@@ -4,6 +4,8 @@ import org.retardants.adt.Aim;
 import org.retardants.adt.Ants;
 import org.retardants.adt.Ilk;
 import org.retardants.adt.Tile;
+import org.retardants.bot.BotTask;
+
 import java.util.*;
 
 /**
@@ -156,5 +158,4 @@ public class DiffusionMap {
             timeStep();
         }
     }
-
 }
