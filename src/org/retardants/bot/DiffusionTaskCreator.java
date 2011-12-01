@@ -62,18 +62,16 @@ public class DiffusionTaskCreator implements TaskCreator {
         TreeSet<Aim> sortedAims = new TreeSet<Aim>(new Comparator<Aim>() {
             @Override
             public int compare(Aim o1, Aim o2) {
-                diffusionMap.getValue(null);
                 Double o1Value = diffusionMap.getValue(ants.getTile(antLoc, o1));
                 Double o2Value = diffusionMap.getValue(ants.getTile(antLoc, o2));
                 if (o1Value == null || o2Value == null )
                     throw new RuntimeException("Null diffusion value");
 
-                return o1Value.compareTo(o2Value);
+                return -o1Value.compareTo(o2Value);
             }
         });
 
         sortedAims.addAll(Arrays.asList(Aim.values()));
-
         task.addTask(antLoc, createTask(sortedAims.first(), ants, antLoc));
 
 

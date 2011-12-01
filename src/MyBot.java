@@ -13,11 +13,14 @@ import org.retardants.adt.Aim;
 import org.retardants.adt.Ants;
 import org.retardants.adt.Bot;
 import org.retardants.adt.Tile;
+import org.retardants.bot.BattleTaskCreator;
 import org.retardants.bot.BotTask;
+import org.retardants.bot.DiffusionTaskCreator;
 import org.retardants.bot.TaskManager;
 import org.retardants.diffusion.DiffusionMap;
 import org.retardants.path.PathMap;
 import org.retardants.path.TilePath;
+import org.retardants.util.Logger;
 
 /**
  * Starter bot implementation.
@@ -43,9 +46,10 @@ public class MyBot extends Bot {
 
     private int turn = 0;
 
-    DiffusionMap diffusionMap;
+    //DiffusionMap diffusionMap;
     TaskManager taskManager = new TaskManager();
-
+    DiffusionTaskCreator diffusionTaskCreator = new DiffusionTaskCreator();
+    BattleTaskCreator battleTaskCreator = new BattleTaskCreator();
 
 
     @Override
@@ -62,7 +66,8 @@ public class MyBot extends Bot {
         super.setup(loadTime, turnTime, rows, cols, turns, viewRadius2, attackRadius2, spawnRadius2);
 
         Ants ants = getAnts();
-        diffusionMap = new DiffusionMap(ants.getCols(), ants.getRows(), ants);
+        diffusionTaskCreator.init(ants);
+        battleTaskCreator.init(ants);
     }
 
     /**
@@ -99,9 +104,6 @@ public class MyBot extends Bot {
         return false;
     }
 
-    private void printTime(String msg) {
-        System.err.println("Remaining after " + msg + ": " + getAnts().getTimeRemaining());
-    }
 
 
 
@@ -124,7 +126,7 @@ public class MyBot extends Bot {
                 for (int col = 0; col < ants.getCols(); col++)
                     unseenTiles.add(new Tile(row, col));
         }
-        printTime("unseen");
+        Logger.log("unseen", ants);
 
         // Remove tiles that we're seeing this turn.
         for (Iterator<Tile> iter = unseenTiles.iterator(); iter.hasNext();) {
@@ -133,7 +135,7 @@ public class MyBot extends Bot {
                 iter.remove();
             }
         }
-        printTime("seen");
+        Logger.log("seen", ants);
 
         // Initialize visited tile map.
         if (visitedTiles == null) {
@@ -144,7 +146,7 @@ public class MyBot extends Bot {
                 }
             }
         }
-        printTime("visited");
+        Logger.log("visited", ants);
 
         // Update visited tile map and enemy hills set.
         for (Tile antLoc : allAnts) {
@@ -171,19 +173,14 @@ public class MyBot extends Bot {
     public void generateCommands(Ants ants) {
 
         Set<Tile> sortedAnts = new TreeSet<Tile>(ants.getMyAnts());
-        // === FOOD ===
+        // Food and exploration
+        diffusionTaskCreator.createTasks(taskManager, ants);
+        Logger.log("food", ants);
 
-        // TODO(ipince): fix timings. We should probably calculate TilePaths first, but issue
-        // orders later.
-        Set<Tile> candies = ants.getFoodTiles();
-        System.err.println("FOOD (" + candies.size() + " candies)");
-        foodDiffusionAllAnts(sortedAnts);
-        printTime("food and exploration");
-
-        // === BATTLE ===
+        // Battle
         System.err.println("BATTLE (" + ants.getEnemyHills().size() + " known hills)");
-        battleDijkstrasTilePath(sortedAnts);
-        printTime("battle");
+        battleTaskCreator.createTasks(taskManager, ants);
+        Logger.log("battle", ants);
 
 
         // Move ants off our hills in a random direction.
@@ -203,7 +200,7 @@ public class MyBot extends Bot {
             }
         }
 
-        printTime("turn is done");
+        Logger.log("turn is done", ants);
     }
 
 
@@ -213,7 +210,6 @@ public class MyBot extends Bot {
              BotTask task = null;
              do {
                 task = taskManager.pollCommand(ant);
-                 System.err.println("Inspecitng task " + task);
              }
              while (task != null && ! doMoveLocation(ant, task.getDestination()));
          }
@@ -226,10 +222,9 @@ public class MyBot extends Bot {
     @Override
     public void doTurn() {
         System.err.println("=====  TURN " + ++turn + " =====");
-        printTime("nothing");
+        Logger.log("nothing", getAnts());
 
         Ants ants = getAnts();
-
 
         turnInit(ants);
         generateCommands(ants);
@@ -237,278 +232,4 @@ public class MyBot extends Bot {
 
 
     }
-
-    private void battleDijkstrasTilePath(Set<Tile> sortedAnts) {
-        Map<Tile, Set<TilePath>> paths = null;
-        for (Tile hillLoc : getAnts().getEnemyHills()) {
-            // For each enemy hill, find the shortest tile-path to each ant.
-            // Use at most 50% of the time.
-            paths = PathMap.findBestPaths(
-                    getAnts(),
-                    hillLoc,
-                    sortedAnts,
-                    getAnts().getTimeRemaining() / 2);
-
-            // Send each ant to the hill using (one of) the shortest path found.
-            for (Tile antLoc : sortedAnts) {
-                if (! allOrders.containsValue(antLoc)) {
-                    if (paths.containsKey(antLoc)) {
-                        for (TilePath path : paths.get(antLoc)) {
-                            // Print the path
-//                            Iterator<Tile> printIter = path.reverseIterator();
-//                            StringBuilder sb = new StringBuilder();
-//                            while (printIter.hasNext()) {
-//                                sb.append(printIter.next() + " -> ");
-//                            }
-//                            System.err.println("Path: " + sb.toString());
-                            Iterator<Tile> iter = path.reverseIterator();
-                            assert iter.hasNext(); iter.next();
-                            assert iter.hasNext();
-
-
-                            taskManager.addTask(
-                                    antLoc,
-                                    new BotTask(
-                                            BotTask.CommandType.BATTLE_COMMAND,
-                                            iter.next(),
-                                            (int) Math.round(path.cost()))
-                            );
-                            /*    if (doMoveLocation(antLoc, iter.next())) {
-                 System.err.println("; killing HILL at " + path.start() +
-                         "; " + (path.cost()-1) + " steps away");
-                 break; // from Set iteration
-             }               */
-
-
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /*
-
-    private void battleShortestEuclideanRoute(Set<Tile> sortedAnts) {
-        // Build routes between every enemy hill and every ant.
-        List<Route> hillRoutes = new ArrayList<Route>();
-        for (Tile hillLoc : getAnts().getEnemyHills()) {
-            for (Tile antLoc : sortedAnts) {
-                if (! allOrders.containsValue(antLoc)) {
-                    int distance = getAnts().getDistance(antLoc, hillLoc);
-                    Route route = new Route(antLoc, hillLoc, distance);
-                    hillRoutes.add(route);
-                }
-            }
-        }
-
-        // Assign all ants to go to the enemy hill, starting with min routes first.
-        Collections.sort(hillRoutes);
-        for (Route route : hillRoutes) {
-            if (doMoveLocation(route.getStart(), route.getEnd())) {
-                System.err.println("; killing HILL at " + route.getEnd());
-            }
-        }
-    }
-
-
-    */
-
-
-
-    // JOSE: THIS IS YOUR ORIGINAL IMPLEMENTATION (minor details changed)
-    private void foodDiffusionAllAnts(Set<Tile> sortedAnts) {
-        Ants ants = getAnts();
-        Set<Tile> candies = ants.getFoodTiles();
-        // Use at most 50% of the turn time.
-        diffusionMap.timeStep(100, candies, ants.getTimeRemaining()/2);
-
-        // For each ant, move in the direction of increasing diffusion value
-        for (Tile antLoc : sortedAnts) {
-            // No need to calculate value for ants who already have orders.
-            if (! allOrders.containsValue(antLoc)) {
-                Double bestValue = Double.MIN_VALUE;
-                Aim bestAim  = null;
-
-                for (Aim aim : Aim.values()) {
-                    Tile neighbor = ants.getTile(antLoc, aim);
-                    Double neighborValue = diffusionMap.getValue(neighbor);
-                    if (neighborValue > bestValue) {
-                        bestValue = neighborValue;
-                        bestAim = aim;
-                    }
-                }
-
-                if (bestAim != null) {
-                    int numSteps =
-                            (int) Math.round(Math.log(bestValue / 100.00) / Math.log(0.50));
-
-                    taskManager.addTask(
-                            antLoc,
-                            new BotTask(
-                                    (numSteps > 7 ? BotTask.CommandType.EXPLORATION_COMMAND :
-                                                    BotTask.CommandType.FOOD_COMMAND),
-                                    ants.getTile(antLoc, bestAim),
-                                    /* TODO: This needs to be moved to DiffusionMap */
-                                    /* if k steps away from a source, then
-                                        the diffusion value will be:
-                                         (SOURCE) * (DIFF_COEFF)^k = value
-                                       Therefore, estimate k as
-                                          log_{DIFF_COEFF} (bestValue / SOURCE)
-                                     */
-                                    numSteps));
-                    /* if (doMoveDirection(antLoc, bestAim)) {
-                      System.err.println("; moving uphill to value " + bestValue);
-                  }  */
-
-                }
-            }
-        }
-    }
-
-
-    /*
-    // TODO(ipince): fix this. Using Routes is hacky.
-    private void foodDiffusionOneAntPerFood(Set<Tile> sortedAnts) {
-        // TODO(ipince): we probably want to send more ants to food. too many are exploring
-        // when there are no enemy hills visible.
-        Ants ants = getAnts();
-        Set<Tile> candies = ants.getFoodTiles();
-        // Use at most 50% of the turn time.
-        diffusionMap.timeStep(100, candies, ants.getTimeRemaining()/2);
-
-        // Populate "routes" for each ant going to its neighboring cells, by setting the "distance"
-        // to the negative of the diffusion value. (higher value -> smaller distance).
-        List<Route> foodRoutes = new ArrayList<Route>();
-        for (Tile antLoc : sortedAnts) {
-            // No need to calculate value for ants who already have orders.
-            if (! allOrders.containsValue(antLoc)) {
-                for (Aim aim : Aim.values()) {
-                    Tile neighbor = ants.getTile(antLoc, aim);
-                    foodRoutes.add(new Route(antLoc, neighbor, (int)Math.round(-diffusionMap.getValue(neighbor))));
-                }
-            }
-        }
-
-        // Sort routes by "distance" (so that routes that go most uphill come first).
-        Collections.sort(foodRoutes);
-
-        // If there are n candies, send n ants to towards their nearest candy (indicated
-        // by the diffusion scent).
-        // TODO(ipince): In an ideal situation, we'd like each ant going to a different candy.
-        // In practice, this doesn't seem to happen. Is it because diffusionMap doesn't treat
-        // ants as sinks?? Ask Jose (too lazy to read code now).
-        int targetedCandies = 0;
-        Map<Tile, Tile> foodOrders = new HashMap<Tile, Tile>(); // avoid repeating an ant's orders
-        // TODO(ipince): i think the foodOrders map is unnecessary; double-check.
-        for (Route route : foodRoutes) {
-            // Once we've successfully sent as many ants as there are candies, we're done.
-            if (targetedCandies >= candies.size()) {
-                break;
-            }
-            if (! foodOrders.containsValue(route.getStart()) &&
-                    doMoveLocation(route.getStart(), route.getEnd())) {
-                foodOrders.put(route.getEnd(), route.getStart());
-                targetedCandies++;
-                System.err.println("; moving uphill to value " + diffusionMap.getValue(route.getEnd()));
-            }
-        }
-    }
-
-    */
-
-
-    /*
-
-    private void foodShortestEuclideanRoute(Set<Tile> sortedAnts) {
-        // Build routes between every food and every ant.
-        Map<Tile, Tile> foodOrders = new HashMap<Tile, Tile>();
-        List<Route> foodRoutes = new ArrayList<Route>();
-        Set<Tile> sortedFood = new TreeSet<Tile>(getAnts().getFoodTiles());
-
-        for (Tile foodLoc : sortedFood) {
-            for (Tile antLoc : sortedAnts) {
-                if (! allOrders.containsValue(antLoc)) {
-                    int distance = getAnts().getDistance(antLoc, foodLoc);
-                    Route route = new Route(antLoc, foodLoc, distance);
-                    foodRoutes.add(route);
-                }
-            }
-        }
-
-        // Assign one food target to each ant, starting with min routes first.
-        Collections.sort(foodRoutes);
-        for (Route route : foodRoutes) {
-            if (! foodOrders.containsKey(route.getEnd())
-                    && ! foodOrders.containsValue(route.getStart())
-                    && doMoveLocation(route.getStart(), route.getEnd())) {
-                foodOrders.put(route.getEnd(), route.getStart());
-                System.err.println("; fetching FOOD at " + route.getEnd());
-            }
-        }
-    }
-
-
-    */
-
-
-    /*
-    private void exploreNearestUnseen(Set<Tile> sortedAnts) {
-        // For each ant that doens't have an order yet, make it go to the closest
-        // unseen tile.
-        for (Tile antLoc : sortedAnts) {
-            if (! allOrders.containsValue(antLoc)) {
-                List<Route> unseenRoutes = new ArrayList<Route>();
-                for (Tile unseenLoc : unseenTiles) {
-                    int distance = getAnts().getDistance(antLoc, unseenLoc);
-                    Route route = new Route(antLoc, unseenLoc, distance);
-                    unseenRoutes.add(route);
-                }
-                Collections.sort(unseenRoutes);
-                for (Route route : unseenRoutes) {
-                    if (doMoveLocation(route.getStart(), route.getEnd())) {
-                        System.err.println(
-                                "; going to EXPLORE " + route.getEnd());
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-
-    private void exploreLeastVisited(Set<Tile> sortedAnts) {
-        // For each order-less ant, send it to the least-visited neighboring
-        // tile.
-        for (final Tile antLoc : sortedAnts) {
-            if (! allOrders.containsValue(antLoc)) {
-//              System.err.println("Finding EXPLORE target for ant at " + antLoc);
-                // Sort directions by num-times-visited.
-                List<Aim> directions =
-                        new ArrayList<Aim>(Arrays.asList(Aim.values()));
-                Collections.shuffle(directions);
-                Collections.sort(directions, new Comparator<Aim>() {
-                    public int compare(Aim o1, Aim o2) {
-                        return visitedTiles.get(getAnts().getTile(antLoc, o1)) -
-                                visitedTiles.get(getAnts().getTile(antLoc, o2));
-                    }
-                });
-                for (Aim direction : directions) {
-//                    System.err.println("Trying to move " + direction + ",
-//                      which has been visited " +
-//                      visitedTiles.get(getAnts().getTile(antLoc, direction))
-//                      + " times.");
-                    if (doMoveDirection(antLoc, direction)) {
-                        System.err.println(
-                                "; going to EXPLORE "
-                                        + getAnts().getTile(antLoc, direction));
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-
-    */
 }
