@@ -1,9 +1,11 @@
 package org.retardants.bot;
 
+import static org.retardants.bot.BotTask.CommandType.*;
 import org.retardants.adt.Ants;
 import org.retardants.adt.Tile;
 import org.retardants.path.PathMap;
 import org.retardants.path.TilePath;
+import org.retardants.util.Numeric;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -18,6 +20,7 @@ public class BattleTaskCreator implements TaskCreator {
     @Override
     public void init(Ants ants) {}
 
+
     /**
      * Creates all tasks that involve any of our ants moving to a given anthill.
      *
@@ -27,40 +30,42 @@ public class BattleTaskCreator implements TaskCreator {
      *                commands
      */
     private void createHillTasks(TaskManager task, Ants ants, Tile hillLoc) {
-
-    }
-    @Override
-    public void createTasks(TaskManager task, Ants ants) {
         Map<Tile, Set<TilePath>> paths = null;
-        for (Tile hillLoc : ants.getEnemyHills()) {
-            // For each enemy hill, find the shortest tile-path to each ant.
-            // Use at most 50% of the time.
-            paths = PathMap.findBestPaths(
-                    ants,
-                    hillLoc,
-                    ants.getMyAnts(),
-                    ants.getTimeRemaining() / 2);
+        Set<Tile> allAnts = ants.getMyAnts();
+        long timeToUse = ants.getTimeRemaining() / 2;
+        // For each enemy hill, find the shortest tile-path to each ant.
+        // Use at most 50% of the time.
+        paths = PathMap.findBestPaths(ants, hillLoc, allAnts, timeToUse);
 
-            // Send each ant to the hill using (one of) the shortest path found.
-            for (Tile antLoc : ants.getMyAnts()) {
-                if (paths.containsKey(antLoc)) {
-                    for (TilePath path : paths.get(antLoc)) {
-                        Iterator<Tile> iter = path.reverseIterator();
-                        assert iter.hasNext(); iter.next();
-                        assert iter.hasNext();
+        // Send each ant to the hill using (one of) the shortest path found.
+        for (Tile antLoc : ants.getMyAnts()) {
+            if (paths.containsKey(antLoc)) {
+                for (TilePath path : paths.get(antLoc)) {
+                    Iterator<Tile> iter = path.reverseIterator();
 
+                    assert iter.hasNext();
+                    iter.next();
+                    assert iter.hasNext();
 
-                        task.addTask(
-                                antLoc,
-                                new BotTask(
-                                        BotTask.CommandType.BATTLE_COMMAND,
-                                        iter.next(),
-                                        (int) Math.round(path.cost()))
-                        );
+                    Tile nextStep = iter.next();
+                    int distanceToHill = Numeric.toInt(path.cost());
 
-                    }
+                    task.addTask(
+                            antLoc,
+                            new BotTask(BATTLE_COMMAND, nextStep, distanceToHill));
+
                 }
             }
+        }
+
+    }
+
+
+    @Override
+    public void createTasks(TaskManager task, Ants ants) {
+
+        for (Tile hillLoc : ants.getEnemyHills()) {
+            createHillTasks(task, ants, hillLoc);
         }
     }
 

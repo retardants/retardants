@@ -4,6 +4,7 @@ import org.retardants.adt.Aim;
 import org.retardants.adt.Ants;
 import org.retardants.adt.Tile;
 import org.retardants.diffusion.DiffusionMap;
+import org.retardants.util.Numeric;
 
 import java.util.*;
 
@@ -27,21 +28,20 @@ public class DiffusionTaskCreator implements TaskCreator {
     private BotTask createTask(Aim aim, Ants ants, Tile antLoc) {
         Double diffValue = diffusionMap.getValue(ants.getTile(antLoc, aim));
 
-        int numSteps =
-                (int) Math.round(Math.log(diffValue / 100.00) / Math.log(0.50));
+        /* TODO(jmunizn): This needs to be moved to DiffusionMap */
+        /* if k steps away from a source, then the diffusion value will be:
+            (SOURCE) * (DIFF_COEFF)^k = value
+          Therefore, estimate k as
+             log_{DIFF_COEFF} (bestValue / SOURCE)
+        */
+        int numSteps = Numeric.toInt(Numeric.logn(0.50, diffValue / 100.00));
+        BotTask.CommandType commandType = null;
+        if (numSteps > 7)
+            commandType = BotTask.CommandType.EXPLORATION_COMMAND;
+        else
+            commandType = BotTask.CommandType.FOOD_COMMAND;
 
-        return new BotTask(
-                (numSteps > 7 ? BotTask.CommandType.EXPLORATION_COMMAND :
-                        BotTask.CommandType.FOOD_COMMAND),
-                ants.getTile(antLoc, aim),
-                /* TODO: This needs to be moved to DiffusionMap */
-                /* if k steps away from a source, then
-                   the diffusion value will be:
-                    (SOURCE) * (DIFF_COEFF)^k = value
-                  Therefore, estimate k as
-                     log_{DIFF_COEFF} (bestValue / SOURCE)
-                */
-                numSteps);
+        return new BotTask(commandType, ants.getTile(antLoc, aim), numSteps);
     }
 
 
@@ -58,6 +58,8 @@ public class DiffusionTaskCreator implements TaskCreator {
         /* Sort aims by increasing diffusion value. We want to move our ant
          * in the direction of the Aim that takes us to the highest tile in
          * our diffusion map.
+         *
+         * TODO(jmunizn): Change to PriorityQueue
          */
         TreeSet<Aim> sortedAims = new TreeSet<Aim>(new Comparator<Aim>() {
             @Override
